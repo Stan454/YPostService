@@ -53,8 +53,8 @@ public class PostLogicTests
         // Arrange
         var expectedPosts = new List<PostDto>
         {
-            new PostDto { PostId = Guid.NewGuid(), UserId = "user1", Content = "Public Post 1", CreatedAt = DateTime.UtcNow, IsPublic = true },
-            new PostDto { PostId = Guid.NewGuid(), UserId = "user2", Content = "Public Post 2", CreatedAt = DateTime.UtcNow.AddMinutes(-1), IsPublic = true }
+            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.Parse("b1c2d3e4-f5a6-7d8e-9f01-12abcdef1234"), Content = "Public Post 1", CreatedAt = DateTime.UtcNow, IsPublic = true },
+            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.Parse("a1b2c3d4-e5f6-7d8e-9f01-01abcdef1234"), Content = "Public Post 2", CreatedAt = DateTime.UtcNow.AddMinutes(-1), IsPublic = true }
         };
 
         // Act
@@ -72,7 +72,6 @@ public class PostLogicTests
         // Arrange
         var newPost = new Post
         {
-            UserId = "newUser",
             Content = "New content",
             IsPublic = true
         };

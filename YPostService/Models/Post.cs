@@ -7,7 +7,7 @@ namespace YPostService.Models
         public Guid PostId { get; set; } = Guid.NewGuid(); // Auto-generate ID
 
         [Required]
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         [Required]
         [MinLength(5, ErrorMessage = "Post content must be at least 5 characters long.")]
