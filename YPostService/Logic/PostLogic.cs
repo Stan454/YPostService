@@ -33,4 +33,14 @@ public class PostLogic : IPostLogic
         return await _postRepo.AddPostAsync(post);
     }
 
+    public async Task IncrementLikeCountAsync(Guid postId)
+    {
+        await _postRepo.IncrementLikeCountAsync(postId);
+    }
+
+    public async Task DecrementLikeCountAsync(Guid postId)
+    {
+        await _postRepo.DecrementLikeCountAsync(postId);
+    }
+
 }

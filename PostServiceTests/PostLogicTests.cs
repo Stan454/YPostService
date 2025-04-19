@@ -17,7 +17,7 @@ public class PostLogicTests
     public PostLogicTests()
     {
         // Initialize the PostRepo with sample data
-        _postRepo = new PostRepo();  // Use actual PostRepo instead of a mock
+        // Use actual PostRepo instead of a mock
         _postLogic = new PostLogic(_postRepo);
     }
 

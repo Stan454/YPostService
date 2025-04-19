@@ -11,9 +11,11 @@ namespace YPostService.Mappers
             {
                 PostId = post.PostId,
                 UserId = post.UserId,
+                Username = post.Username,
                 Content = post.Content,
                 CreatedAt = post.CreatedAt,
                 IsPublic = post.IsPublic,
+                LikeCount = post.LikeCount
             };
         }
     }

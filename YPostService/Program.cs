@@ -1,27 +1,25 @@
+using Microsoft.EntityFrameworkCore;
 using YPostService.Logic;
 using YPostService.Repo;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IPostRepo, PostRepo>();
+builder.Services.AddScoped<IPostRepo, PostRepo>();
 builder.Services.AddScoped<IPostLogic, PostLogic>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:5173") // Replace with your React URL
+        policy.WithOrigins("https://localhost:7099") 
               .AllowAnyMethod()
               .AllowAnyHeader());
 });
-
+builder.Services.AddHostedService<RabbitMQConsumer>();
+builder.Services.AddDbContext<PostDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -30,10 +28,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors();
+
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.UseCors();
 
 app.Run();

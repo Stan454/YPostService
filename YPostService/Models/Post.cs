@@ -8,6 +8,7 @@ namespace YPostService.Models
 
         [Required]
         public Guid UserId { get; set; }
+        public string Username { get; set; }
 
         [Required]
         [MinLength(5, ErrorMessage = "Post content must be at least 5 characters long.")]
@@ -16,6 +17,6 @@ namespace YPostService.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsPublic { get; set; } = true;
-
+        public int LikeCount { get; set; }
     }
 }

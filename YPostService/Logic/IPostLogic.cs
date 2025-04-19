@@ -8,5 +8,7 @@ namespace YPostService.Logic
         Task<Post> GetPostByIdAsync(Guid id);
         Task<List<PostDto>> GetPublicPostsAsync();
         Task<Post> SendPostAsync(Post post);
+        Task IncrementLikeCountAsync(Guid postId);
+        Task DecrementLikeCountAsync(Guid postId);
     }
 }
