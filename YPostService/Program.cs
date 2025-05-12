@@ -11,14 +11,22 @@ builder.Services.AddScoped<IPostLogic, PostLogic>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("https://localhost:7099") 
+        policy.WithOrigins("https://localhost:7099")
               .AllowAnyMethod()
               .AllowAnyHeader());
 });
 builder.Services.AddHostedService<RabbitMQConsumer>();
 builder.Services.AddDbContext<PostDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<PostDbContext>();
+    dbContext.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -26,7 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseCors();
 

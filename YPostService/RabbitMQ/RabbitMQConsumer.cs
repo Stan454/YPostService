@@ -10,7 +10,7 @@ using YPostService.Logic;
 
 public class RabbitMQConsumer : BackgroundService
 {
-    private readonly string _hostname = "localhost";
+    private readonly string _hostname = "rabbitmq";
     private readonly string _queueName = "LikeUpdate";
     private readonly IServiceProvider _serviceProvider;
 
@@ -19,43 +19,61 @@ public class RabbitMQConsumer : BackgroundService
         _serviceProvider = serviceProvider;
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Step 1: Create a connection to RabbitMQ
         var factory = new ConnectionFactory
         {
             HostName = _hostname
         };
 
-        var connection = factory.CreateConnection();
-        var channel = connection.CreateModel();
+        IConnection connection = null;
+        IModel channel = null;
 
-        // Step 2: Declare the queue
-        channel.QueueDeclare(
-            queue: _queueName,
-            durable: false,
-            exclusive: false,
-            autoDelete: false,
-            arguments: null
-        );
+        while (connection == null && !stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                // Attempt to create a connection
+                connection = factory.CreateConnection();
+                channel = connection.CreateModel();
 
-        // Step 3: Set up the consumer
+                // Declare the queue
+                channel.QueueDeclare(
+                    queue: _queueName,
+                    durable: false,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null
+                );
+
+                Console.WriteLine("Connected to RabbitMQ and queue declared.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to connect to RabbitMQ: {ex.Message}. Retrying in 5 seconds...");
+                await Task.Delay(5000, stoppingToken); // Wait 5 seconds before retrying
+            }
+        }
+
+        if (channel == null)
+        {
+            Console.WriteLine("Failed to connect to RabbitMQ. Exiting...");
+            return;
+        }
+
+        // Set up the consumer
         var consumer = new EventingBasicConsumer(channel);
         consumer.Received += async (model, ea) =>
         {
-            // Step 4: Process the received message
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
             Console.WriteLine($"Received message: {message}");
 
-            // Deserialize the message
             var likeEvent = JsonSerializer.Deserialize<LikeEvent>(message);
-
-            // Process the event
             await HandleLikeEvent(likeEvent);
         };
 
-        // Step 5: Start consuming messages
+        // Start consuming messages
         channel.BasicConsume(
             queue: _queueName,
             autoAck: true,
@@ -63,7 +81,6 @@ public class RabbitMQConsumer : BackgroundService
         );
 
         Console.WriteLine("Listening for messages on the LikeUpdate queue...");
-        return Task.CompletedTask; // Keep the service running
     }
 
     private async Task HandleLikeEvent(LikeEvent likeEvent)
