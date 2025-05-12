@@ -1,51 +1,47 @@
 using Moq;
-using Xunit;
-using YPostService.Logic;
-using YPostService.Repo;
-using YPostService.Models;
 using YPostService.Models.Dtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using YPostService.Models;
+using YPostService.Repo;
 
 public class PostLogicTests
 {
-    private readonly IPostRepo _postRepo;
+    private readonly Mock<IPostRepo> _postRepoMock;
     private readonly PostLogic _postLogic;
 
     public PostLogicTests()
     {
-        // Initialize the PostRepo with sample data
-        // Use actual PostRepo instead of a mock
-        _postLogic = new PostLogic(_postRepo);
+        _postRepoMock = new Mock<IPostRepo>();
+        _postLogic = new PostLogic(_postRepoMock.Object);
     }
 
-    //[Fact]
-    //public async Task GetPostByIdAsync_ShouldReturnPostDto_WhenPostExists()
-    //{
-    //    // Arrange
-    //    var postId = Guid.NewGuid(); // Replace with an actual GUID from the _posts list
-    //    var expectedPost = new PostDto
-    //    {
-    //        PostId = postId,
-    //        UserId = "user1",
-    //        Content = "Hello world!",
-    //        CreatedAt = DateTime.UtcNow,
-    //        IsPublic = true
-    //    };
+    [Fact]
+    public async Task GetPostByIdAsync_ShouldReturnPostDto_WhenPostExists()
+    {
+        // Arrange
+        var postId = Guid.NewGuid();
+        var expectedPost = new Post
+        {
+            PostId = postId,
+            UserId = Guid.NewGuid(),
+            Content = "Hello world!",
+            CreatedAt = DateTime.UtcNow,
+            IsPublic = true
+        };
 
-    //    // Act
-    //    var result = await _postLogic.GetPostByIdAsync(postId);
+        _postRepoMock.Setup(repo => repo.GetPostByIdAsync(postId))
+                     .ReturnsAsync(expectedPost);
 
-    //    // Assert
-    //    Assert.NotNull(result);
-    //    Assert.Equal(expectedPost.PostId, result.PostId);
-    //    Assert.Equal(expectedPost.Content, result.Content);
-    //    Assert.Equal(expectedPost.UserId, result.UserId);
-    //    Assert.Equal(expectedPost.CreatedAt, result.CreatedAt, TimeSpan.FromSeconds(1)); // Allow small margin for CreatedAt comparison
-    //    Assert.Equal(expectedPost.IsPublic, result.IsPublic);
-    //}
+        // Act
+        var result = await _postLogic.GetPostByIdAsync(postId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedPost.PostId, result.PostId);
+        Assert.Equal(expectedPost.Content, result.Content);
+        Assert.Equal(expectedPost.UserId, result.UserId);
+        Assert.Equal(expectedPost.CreatedAt, result.CreatedAt, TimeSpan.FromSeconds(1));
+        Assert.Equal(expectedPost.IsPublic, result.IsPublic);
+    }
 
     [Fact]
     public async Task GetPublicPostsAsync_ShouldReturnListOfPostDtos()
@@ -53,17 +49,20 @@ public class PostLogicTests
         // Arrange
         var expectedPosts = new List<PostDto>
         {
-            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.Parse("b1c2d3e4-f5a6-7d8e-9f01-12abcdef1234"), Content = "Public Post 1", CreatedAt = DateTime.UtcNow, IsPublic = true },
-            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.Parse("a1b2c3d4-e5f6-7d8e-9f01-01abcdef1234"), Content = "Public Post 2", CreatedAt = DateTime.UtcNow.AddMinutes(-1), IsPublic = true }
+            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.NewGuid(), Content = "Public Post 1", CreatedAt = DateTime.UtcNow, IsPublic = true },
+            new PostDto { PostId = Guid.NewGuid(), UserId = Guid.NewGuid(), Content = "Public Post 2", CreatedAt = DateTime.UtcNow.AddMinutes(-1), IsPublic = true }
         };
+
+        _postRepoMock.Setup(repo => repo.GetPublicPosts())
+                     .ReturnsAsync(expectedPosts);
 
         // Act
         var result = await _postLogic.GetPublicPostsAsync();
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Count > 0); // Should return public posts
-        Assert.Contains(result, p => p.IsPublic == true);  // Ensure public posts exist
+        Assert.Equal(expectedPosts.Count, result.Count);
+        Assert.All(result, post => Assert.True(post.IsPublic));
     }
 
     [Fact]
@@ -73,27 +72,31 @@ public class PostLogicTests
         var newPost = new Post
         {
             Content = "New content",
-            IsPublic = true
+            IsPublic = true,
+            UserId = Guid.NewGuid()
         };
 
-        var expectedPostDto = new PostDto
+        var savedPost = new Post
         {
-            PostId = Guid.NewGuid(),  // PostId will be generated within SendPostAsync
-            UserId = newPost.UserId,
+            PostId = Guid.NewGuid(),
             Content = newPost.Content,
-            CreatedAt = DateTime.UtcNow,
-            IsPublic = true
+            IsPublic = newPost.IsPublic,
+            UserId = newPost.UserId,
+            CreatedAt = DateTime.UtcNow
         };
+
+        _postRepoMock.Setup(repo => repo.AddPostAsync(It.IsAny<Post>()))
+                     .ReturnsAsync(savedPost);
 
         // Act
         var result = await _postLogic.SendPostAsync(newPost);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(newPost.Content, result.Content);
-        Assert.NotEqual(Guid.Empty, result.PostId);  // Ensure PostId is generated
-        Assert.True(result.CreatedAt <= DateTime.UtcNow); // Ensure CreatedAt is set
-        Assert.Equal(newPost.UserId, result.UserId);
-        Assert.Equal(newPost.IsPublic, result.IsPublic);
+        Assert.Equal(savedPost.PostId, result.PostId);
+        Assert.Equal(savedPost.Content, result.Content);
+        Assert.Equal(savedPost.UserId, result.UserId);
+        Assert.Equal(savedPost.CreatedAt, result.CreatedAt, TimeSpan.FromSeconds(1));
+        Assert.Equal(savedPost.IsPublic, result.IsPublic);
     }
 }
