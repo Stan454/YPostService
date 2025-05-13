@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Tests and CodeQL Analysis
 
 on:
   push:
@@ -10,6 +10,8 @@ jobs:
   test:
     name: Run xUnit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -18,7 +20,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Adjust for your .NET version
+          dotnet-version: '8.0.x' 
 
       - name: Restore dependencies
         run: dotnet restore
@@ -28,3 +30,35 @@ jobs:
 
       - name: Run tests
         run: dotnet test --no-build --configuration Release
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    needs: test  # Only runs after the test job is successful
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        language: [csharp]
+        build-mode: [manual]  # Manual build mode may be necessary if autobuild isn't working for your .NET project
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+    
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: manual
+    
+      - name: Build solution manually
+        run: dotnet build --configuration Release
+    
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+      
