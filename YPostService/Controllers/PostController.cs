@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using YPostService.Logic;
 using YPostService.Models;
 
@@ -46,4 +47,24 @@ public class PostController : ControllerBase
 
         return Ok(post);
     }
+
+    [HttpGet("/tests")]
+    public IActionResult Testifcve(string username)
+    {
+        using (var connection = new SqlConnection("YourConnectionStringHere"))
+        {
+            var command = new SqlCommand("SELECT * FROM Users WHERE Username = '" + username + "'", connection);
+            connection.Open();
+            var reader = command.ExecuteReader();
+
+            // Dummy logic
+            if (reader.Read())
+            {
+                return Ok(reader["Username"].ToString());
+            }
+        }
+
+        return NotFound();
+    }
+
 }
