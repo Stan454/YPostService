@@ -1,4 +1,4 @@
-name: Run Tests and Analysis
+name: Run Tests and CodeQL Analysis
 
 on:
   push:
@@ -34,12 +34,18 @@ jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    needs: test
+    needs: test  # Only runs after the test job is successful
 
     permissions:
       actions: read
       contents: read
       security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp]  # You can add other languages if needed
+        build-mode: [none]  # Use 'none' for simple setups, or customize build mode if required.
 
     steps:
       - name: Checkout repository
@@ -48,7 +54,8 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: 'csharp'
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Autobuild (for .NET)
         uses: github/codeql-action/autobuild@v3
