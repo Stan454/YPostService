@@ -42,23 +42,23 @@ jobs:
       security-events: write
 
     strategy:
-      fail-fast: false
       matrix:
-        language: [csharp]  # You can add other languages if needed
-        build-mode: [none]  # Use 'none' for simple setups, or customize build mode if required.
-
+        language: [csharp]
+        build-mode: [manual]  # Manual build mode may be necessary if autobuild isn't working for your .NET project
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+    
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-
-      - name: Autobuild (for .NET)
-        uses: github/codeql-action/autobuild@v3
-
+          languages: csharp
+          build-mode: manual
+    
+      - name: Build solution manually
+        run: dotnet build --configuration Release
+    
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+      
