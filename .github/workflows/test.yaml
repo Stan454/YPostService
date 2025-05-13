@@ -1,4 +1,4 @@
-name: Run Tests and CodeQL Analysis
+name: Run Tests and Analysis
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 
 jobs:
   test:
-    name: Run xUnit Tests and CodeQL Analysis
+    name: Run xUnit Tests
     runs-on: ubuntu-latest
 
     steps:
-      
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -30,23 +29,26 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --configuration Release
 
-  
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    needs: test  
+    needs: test
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
-      # Checkout repository for CodeQL analysis
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up CodeQL
+      - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
-          languages: 'csharp'  
+          languages: 'csharp'
 
-      - name: Autobuild
+      - name: Autobuild (for .NET)
         uses: github/codeql-action/autobuild@v2
 
       - name: Perform CodeQL Analysis
