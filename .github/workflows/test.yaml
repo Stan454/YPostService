@@ -18,7 +18,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  # Adjust according to your .NET version
+          dotnet-version: '8.0.x'  # Adjust for your .NET version
 
       - name: Restore dependencies
         run: dotnet restore
@@ -27,19 +27,4 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Run tests
-        run: dotnet test --no-build --configuration Release --logger trx --results-directory ./TestResults
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: ./TestResults/*.trx
-          retention-days: 7
-
-      - name: Publish Unit Test Report
-        uses: dorny/test-reporter@v1
-        if: always()  # Always run, even if the tests fail
-        with:
-          name: Unit Tests
-          path: ./TestResults/*.trx
-          reporter: dotnet-trx
+        run: dotnet test --no-build --configuration Release
