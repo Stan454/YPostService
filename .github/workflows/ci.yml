@@ -26,6 +26,8 @@ jobs:
         dotnet run --project YPostService/YPostService.csproj --configuration Release &
       env:
         ASPNETCORE_ENVIRONMENT: CI
+        DOTNET_ENVIRONMENT: CI
+
 
     - name: Wait for API to start
       run: |
