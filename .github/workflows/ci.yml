@@ -1,27 +1,46 @@
-name: Continuous Integration
+name: CI Pipeline
 
-on:
-  push:
-    branches: [master, dev]
-  pull_request:
-    branches: [master, dev]
+on: [push, pull_request]
 
 jobs:
-  ci:
-    name: CI - Build & Restore
+  test-api:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-      
-      - name: Restore dependencies
-        run: dotnet restore
-      
-      - name: Build solution
-        run: dotnet build --no-restore --configuration Release
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.x
+
+    - name: Restore dependencies
+      run: dotnet restore YPostService/YPostService.csproj
+
+    - name: Build project
+      run: dotnet build YPostService/YPostService.csproj --no-restore --configuration Release
+
+    - name: Run API in background
+      run: |
+        dotnet run --project YPostService/YPostService.csproj --configuration Release &
+      env:
+        ASPNETCORE_ENVIRONMENT: CI
+
+    - name: Wait for API to start
+      run: |
+        echo "Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5206/swagger > /dev/null; then
+            echo "API is ready!"
+            break
+          fi
+          sleep 2
+        done
+
+    - name: Install newman (Postman CLI runner)
+      run: npm install -g newman
+
+    - name: Run Postman tests
+      run: |
+        newman run PostServiceTests/YPostApiTests.postman_collection.json  --insecure
