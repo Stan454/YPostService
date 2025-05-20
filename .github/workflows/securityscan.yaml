@@ -52,7 +52,9 @@ jobs:
       with:
         target: 'http://localhost:5206'
         allow_issue_writing: false
+        upload_report: false 
         cmd_options: '-I -J report_json.json -w report_md.md -r report_html.html'
+
 
 
     - name: Upload ZAP HTML Report
