@@ -1,0 +1,162 @@
+{
+	"info": {
+		"_postman_id": "dec0644b-f5bd-4218-a152-268c3bcf4ff4",
+		"name": "YPostApiTests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "20622241-dec0644b-f5bd-4218-a152-268c3bcf4ff4"
+	},
+	"item": [
+		{
+			"name": "TestIfSanitized",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "40e975f4-7519-45e5-ae79-f28baaed4343",
+						"exec": [
+							"pm.test(\"Status code is 201 Created\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Content does not include <script>\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.content).to.not.include(\"<script>\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "be259be6-f7c4-4331-be49-97ec9d80ca2d",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"postId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\r\n  \"userId\": \"00000000-0000-0000-0000-000000000000\",\r\n  \"username\": \"testpostmanuser\",\r\n  \"content\": \"<script>alert('XSS')</script>\",\r\n  \"createdAt\": \"2025-05-19T15:05:38.302Z\",\r\n  \"isPublic\": true,\r\n  \"likeCount\": 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/Post",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"Post"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TestIfValidateFailNoUsername",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9d07c53a-ae22-4299-8522-75b37130fe5b",
+						"exec": [
+							"pm.test(\"Should return 400 when required fields are missing\", function () {\r",
+							"    pm.response.to.have.status(400);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "575e3462-55f7-4242-9d20-35fe0557022b",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"postId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\r\n  \"userId\": \"\",\r\n  \"username\": \"string\",\r\n  \"content\": \"string\",\r\n  \"createdAt\": \"2025-05-19T15:05:38.302Z\",\r\n  \"isPublic\": true,\r\n  \"likeCount\": 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/Post",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"Post"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TestIfValidateFailTooMuchText",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3960ea33-91d3-4232-b6ea-6437701341ca",
+						"exec": [
+							"pm.test(\"Should return 400 for content longer than 280 characters\", function () {\r",
+							"    pm.response.to.have.status(400);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"id": "3dbaab6f-cc17-484c-8acd-765c862843eb",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"postId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\r\n  \"userId\": \"00000000-0000-0000-0000-000000000001\",\r\n  \"username\": \"testpostmanuser\",\r\n  \"content\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\r\n  \"createdAt\": \"2025-05-19T15:05:38.302Z\",\r\n  \"isPublic\": true,\r\n  \"likeCount\": 0\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:44356/api/Post",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44356",
+					"path": [
+						"api",
+						"Post"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
