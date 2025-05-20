@@ -1,5 +1,12 @@
 {
   "profiles": {
+    "CI": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "CI"
+      },
+      "applicationUrl": "http://localhost:5206"
+    },
     "http": {
       "commandName": "Project",
       "launchBrowser": true,

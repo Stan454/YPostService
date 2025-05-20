@@ -2,6 +2,9 @@ using Moq;
 using YPostService.Models.Dtos;
 using YPostService.Models;
 using YPostService.Repo;
+using Microsoft.AspNetCore.Mvc;
+using YPostService.Logic;
+using System.ComponentModel.DataAnnotations;
 
 public class PostLogicTests
 {
@@ -99,4 +102,119 @@ public class PostLogicTests
         Assert.Equal(savedPost.CreatedAt, result.CreatedAt, TimeSpan.FromSeconds(1));
         Assert.Equal(savedPost.IsPublic, result.IsPublic);
     }
+
+    [Fact]
+    public async Task SendPost_RemovesScriptTagsFromContent()
+    {
+        // Arrange
+        var mockLogic = new Mock<IPostLogic>();
+        var post = new Post
+        {
+            UserId = Guid.NewGuid(),
+            Username = "testuser",
+            Content = "<script>alert('xss')</script>Safe content"
+        };
+        mockLogic.Setup(l => l.SendPostAsync(It.IsAny<Post>()))
+            .ReturnsAsync((Post p) => p);
+
+        var controller = new PostController(mockLogic.Object);
+
+        // Act
+        var result = await controller.SendPost(post) as CreatedAtActionResult;
+        var createdPost = result?.Value as Post;
+
+        // Assert
+        Assert.NotNull(createdPost);
+        Assert.DoesNotContain("<script>", createdPost.Content, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Safe content", createdPost.Content);
+    }
+
+    [Theory]
+    [InlineData("<script>alert(1)</script>", "")]
+    [InlineData("<img src='x' onerror='alert(1)'>", "")]
+    [InlineData("<a href=\"javascript:alert(1)\">link</a>", "")]
+    [InlineData("<div style=\"background-image: url(javascript:alert(1))\">test</div>", "")]
+    public void HtmlSanitizer_RemovesDangerousContent(string input, string expected)
+    {
+        var sanitizer = new Ganss.Xss.HtmlSanitizer();
+        sanitizer.AllowedTags.Clear();
+        var sanitized = sanitizer.Sanitize(input);
+        Assert.Equal(expected, sanitized);
+    }
+
+    [Fact]
+    public void Post_ModelValidation_ValidModel_Passes()
+    {
+        // Arrange
+        var post = new Post
+        {
+            UserId = Guid.NewGuid(),
+            Username = "validuser",
+            Content = "This is a valid post content.",
+            CreatedAt = DateTime.UtcNow,
+            IsPublic = true
+        };
+
+        var context = new ValidationContext(post, null, null);
+        var results = new List<ValidationResult>();
+
+        // Act
+        var isValid = Validator.TryValidateObject(post, context, results, true);
+
+        // Assert
+        Assert.True(isValid);
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public void Post_ModelValidation_InvalidModel_Fails()
+    {
+        // Arrange
+        var post = new Post
+        {
+            UserId = Guid.Empty, // Invalid
+            Username = new string('a', 51), // te lang
+            Content = "123", // Te kort
+            CreatedAt = DateTime.UtcNow,
+            IsPublic = true
+        };
+
+        var context = new ValidationContext(post, null, null);
+        var results = new List<ValidationResult>();
+
+        // Act
+        var isValid = Validator.TryValidateObject(post, context, results, true);
+
+        // Assert
+        Assert.False(isValid);
+        Assert.NotEmpty(results);
+        Assert.Contains(results, r => r.ErrorMessage.Contains("Username cannot exceed 50 characters"));
+        Assert.Contains(results, r => r.ErrorMessage.Contains("Post content must be at least 5 characters long"));
+    }
+
+    [Fact]
+    public void Post_ModelValidation_ContentTooLong_Fails()
+    {
+        // Arrange
+        var post = new Post
+        {
+            UserId = Guid.NewGuid(),
+            Username = "validuser",
+            Content = new string('a', 281),
+            CreatedAt = DateTime.UtcNow,
+            IsPublic = true
+        };
+
+        var context = new ValidationContext(post, null, null);
+        var results = new List<ValidationResult>();
+
+        // Act
+        var isValid = Validator.TryValidateObject(post, context, results, true);
+
+        // Assert
+        Assert.False(isValid);
+        Assert.NotEmpty(results);
+        Assert.Contains(results, r => r.ErrorMessage.Contains("Post content cannot exceed 280 characters"));
+    }
+
 }

@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using YPostService.Logic;
 using YPostService.Models;
+using Ganss.Xss;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -31,6 +32,10 @@ public class PostController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        var sanitizer = new HtmlSanitizer();
+        sanitizer.AllowedTags.Clear();
+        post.Content = sanitizer.Sanitize(post.Content);
 
         var createdPost = await _postLogic.SendPostAsync(post);
 
