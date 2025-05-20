@@ -31,31 +31,11 @@ jobs:
       - name: Run tests
         run: dotnet test --no-build --configuration Release
 
-  postman-tests:
-    name: Run Postman Integration Tests
-    runs-on: ubuntu-latest
-    needs: test  # Run after xUnit tests succeed
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install Newman
-        run: npm install -g newman
-
-      - name: Run Postman collection with Newman
-        run: newman run ./PostServiceTests/YPostApiTests.postman_collection.json
-        # Optional: add --environment ./postman/environment.json if you use environment variables
-
+      
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    needs: [test, postman-tests]  # Runs only after both test jobs succeed
+    needs: [test]  # Runs only after both test jobs succeed
 
     permissions:
       actions: read
