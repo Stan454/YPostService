@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "53faa01a-7a36-4687-99f4-b932da4e408e",
+		"_postman_id": "5fa8043f-fed7-4dea-9b70-246a24610fa2",
 		"name": "YPostApiTests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "20622241"
@@ -41,12 +41,12 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:44356/api/Post",
-					"protocol": "https",
+					"raw": "http://localhost:5206/api/Post",
+					"protocol": "http",
 					"host": [
 						"localhost"
 					],
-					"port": "44356",
+					"port": "5206",
 					"path": [
 						"api",
 						"Post"
@@ -85,12 +85,12 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:44356/api/Post",
-					"protocol": "https",
+					"raw": "http://localhost:5206/api/Post",
+					"protocol": "http",
 					"host": [
 						"localhost"
 					],
-					"port": "44356",
+					"port": "5206",
 					"path": [
 						"api",
 						"Post"
@@ -129,12 +129,12 @@
 					}
 				},
 				"url": {
-					"raw": "https://localhost:44356/api/Post",
-					"protocol": "https",
+					"raw": "http://localhost:5206/api/Post",
+					"protocol": "http",
 					"host": [
 						"localhost"
 					],
-					"port": "44356",
+					"port": "5206",
 					"path": [
 						"api",
 						"Post"
