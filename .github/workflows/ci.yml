@@ -39,8 +39,10 @@ jobs:
           sleep 2
         done
 
-    - name: Install newman (Postman CLI runner)
-      run: npm install -g newman
+    - name: Install newman (Postman CLI runner) and HTML reporter
+      run: |
+        npm install -g newman
+        npm install -g newman-reporter-html
 
     - name: Run Postman tests with HTML report
       run: |
