@@ -52,10 +52,9 @@ jobs:
       with:
         target: 'http://localhost:5206'
         allow_issue_writing: false
-        artifact_name: 'securityscan'
 
     - name: Upload ZAP HTML Report
-      uses: actions/upload-artifact@v4.6.2
+      uses: actions/upload-artifact@v4
       with:
         name: zap-html-report
         path: report_html.html
