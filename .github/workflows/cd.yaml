@@ -26,6 +26,6 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./YpostService/Dockerfile
         push: true
         tags: stan454/ypostservice:latest
