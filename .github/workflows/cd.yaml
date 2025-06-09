@@ -28,4 +28,4 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: stan454/YPostService:latest
+        tags: stan454/ypostservice:latest
