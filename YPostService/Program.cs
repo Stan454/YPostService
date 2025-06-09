@@ -1,9 +1,40 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
+using System.Reflection;
 using YPostService.Logic;
 using YPostService.Models;
 using YPostService.Repo;
 
+// Serilog setup before builder
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+    .AddEnvironmentVariables()
+    .Build();
+
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.Console()
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(configuration["ElasticConfiguration:Uri"]))
+    {
+        IndexFormat = $"{Assembly.GetExecutingAssembly().GetName().Name?.ToLower().Replace(".", "-")}-logs-{environment?.ToLower().Replace(".", "-")}-{DateTime.UtcNow:yyyy-MM}",
+        AutoRegisterTemplate = true,
+        NumberOfShards = 2,
+        NumberOfReplicas = 1
+    })
+    .Enrich.WithProperty("Environment", environment)
+    .ReadFrom.Configuration(configuration)
+    .CreateLogger();
+
+Log.Information("Test log to trigger index creation in Elasticsearch");
+Log.Error("FORCE ERROR LOG to ensure Elasticsearch receives something");
+
+// Create builder with Serilog
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // Add services
 builder.Services.AddControllers();
@@ -21,25 +52,31 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-// Configure DB context
 var env = builder.Environment;
 
+string connectionString;
 if (env.IsEnvironment("CI"))
 {
-    // Use in-memory database for CI builds
     builder.Services.AddDbContext<PostDbContext>(options =>
         options.UseInMemoryDatabase("CI_TestDB"));
 }
-else
+else if (env.IsEnvironment("Development"))
 {
-    // Use PostgreSQL in other environments
-    var connectionString = env.IsDevelopment()
-        ? builder.Configuration.GetConnectionString("DevPostDb")
-        : builder.Configuration.GetConnectionString("DefaultConnection");
-
+    connectionString = builder.Configuration.GetConnectionString("DevPostDb");
     builder.Services.AddDbContext<PostDbContext>(options =>
         options.UseNpgsql(connectionString));
 }
+else if (env.IsEnvironment("Minikube"))
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection"); // or "MinikubePostDb"
+    builder.Services.AddDbContext<PostDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    throw new Exception("Unknown environment");
+}
+
 
 var app = builder.Build();
 
@@ -47,8 +84,7 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Running in environment: {env}", env.EnvironmentName);
 logger.LogInformation("Using database provider: {provider}", env.IsEnvironment("CI") ? "InMemory" : "PostgreSQL");
 
-
-// Apply migrations or seed data (conditionally)
+// Apply migrations or seed data conditionally
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<PostDbContext>();
@@ -57,10 +93,11 @@ using (var scope = app.Services.CreateScope())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
+
         dbContext.Posts.Add(new Post
         {
-            PostId = Guid.NewGuid(), // Optional, since it auto-generates
-            UserId = Guid.NewGuid(), // Simulate a valid user ID
+            PostId = Guid.NewGuid(),
+            UserId = Guid.NewGuid(),
             Username = "CIUser",
             Content = "This is a test post for CI pipeline.",
             CreatedAt = DateTime.UtcNow,
@@ -71,12 +108,11 @@ using (var scope = app.Services.CreateScope())
     }
     else
     {
-        // Ensure database is migrated in non-CI environments
         dbContext.Database.Migrate();
     }
 }
 
-if (app.Environment.IsDevelopment())
+if (env.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
