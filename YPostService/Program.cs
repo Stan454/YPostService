@@ -53,7 +53,7 @@ builder.Services.AddCors(options =>
 });
 
 var env = builder.Environment;
-
+//setup database context based on environment
 string connectionString;
 if (env.IsEnvironment("CI"))
 {
