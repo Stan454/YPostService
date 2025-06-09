@@ -21,24 +21,29 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader());
 });
 
-// Configure DB context
 var env = builder.Environment;
-
+//setup database context based on environment
+string connectionString;
 if (env.IsEnvironment("CI"))
 {
-    // Use in-memory database for CI builds
     builder.Services.AddDbContext<PostDbContext>(options =>
         options.UseInMemoryDatabase("CI_TestDB"));
 }
-else
+else if (env.IsEnvironment("Development"))
 {
-    // Use PostgreSQL in other environments
-    var connectionString = env.IsDevelopment()
-        ? builder.Configuration.GetConnectionString("DevPostDb")
-        : builder.Configuration.GetConnectionString("DefaultConnection");
-
+    connectionString = builder.Configuration.GetConnectionString("DevPostDb");
     builder.Services.AddDbContext<PostDbContext>(options =>
         options.UseNpgsql(connectionString));
+}
+else if (env.IsEnvironment("Minikube"))
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection"); // or "MinikubePostDb"
+    builder.Services.AddDbContext<PostDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    throw new Exception("Unknown environment");
 }
 
 var app = builder.Build();
