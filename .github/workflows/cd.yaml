@@ -30,7 +30,7 @@ jobs:
       run: docker build -t stan454/ypostservice:${{ github.sha }} ./YPostService
 
     - name: Scan Docker image with Trivy and output SARIF
-      uses: aquasecurity/trivy-action@v0.31.0
+      uses: aquasecurity/trivy-action@0.31.0
       with:
         image-ref: stan454/ypostservice:${{ github.sha }}
         format: sarif
