@@ -9,6 +9,10 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      security-events: write  # needed for uploading SARIF reports
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -22,10 +26,26 @@ jobs:
         username: stan454
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
+    - name: Build Docker image
+      run: docker build -t stan454/ypostservice:${{ github.sha }} ./YPostService
+
+    - name: Scan Docker image with Trivy and output SARIF
+      uses: aquasecurity/trivy-action@v0.27.1
       with:
-        context: ./YPostService
-        file: ./YPostService/Dockerfile
-        push: true
-        tags: stan454/ypostservice:latest
+        image-ref: stan454/ypostservice:${{ github.sha }}
+        format: sarif
+        output: trivy-results.sarif
+        severity: CRITICAL,HIGH
+
+    - name: Upload Trivy SARIF report to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: trivy-results.sarif
+
+    - name: Push Docker image to Docker Hub
+      run: docker push stan454/ypostservice:${{ github.sha }}
+
+    - name: Tag Docker image as latest and push
+      run: |
+        docker tag stan454/ypostservice:${{ github.sha }} stan454/ypostservice:latest
+        docker push stan454/ypostservice:latest
