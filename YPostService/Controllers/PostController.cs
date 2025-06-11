@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using YPostService.Logic;
 using YPostService.Models;
 using Ganss.Xss;
+using Serilog;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -35,12 +36,26 @@ public class PostController : ControllerBase
 
         var sanitizer = new HtmlSanitizer();
         sanitizer.AllowedTags.Clear();
-        post.Content = sanitizer.Sanitize(post.Content);
 
+        var originalContent = post.Content;
+        var sanitizedContent = sanitizer.Sanitize(originalContent);
+
+        if (originalContent != sanitizedContent)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            Log.Warning("Suspicious input detected from IP {IP}, user {Username}. Original: {Original}, Sanitized: {Sanitized}",
+                ip ?? "Unknown IP",
+                post.Username ?? "Unknown User",
+                originalContent,
+                sanitizedContent);
+        }
+        post.Content = sanitizedContent;
         var createdPost = await _postLogic.SendPostAsync(post);
-
         return CreatedAtAction(nameof(GetPostById), new { id = createdPost.PostId }, createdPost);
     }
+
+
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPostById([FromRoute] Guid id)
