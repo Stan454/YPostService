@@ -1,6 +1,14 @@
 name: CI Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      # - master
+      - dev
+  pull_request:
+    branches:
+      # - master
+      - dev
 
 jobs:
   test-api:
@@ -28,7 +36,6 @@ jobs:
         ASPNETCORE_ENVIRONMENT: CI
         DOTNET_ENVIRONMENT: CI
 
-
     - name: Wait for API to start
       run: |
         echo "Waiting for API to be ready..."
@@ -40,9 +47,67 @@ jobs:
           sleep 2
         done
 
-    - name: Install newman (Postman CLI runner)
-      run: npm install -g newman
-
-    - name: Run Postman tests
+    - name: Install newman (Postman CLI runner) and HTML reporter
       run: |
-        newman run PostServiceTests/YPostApiTests.postman_collection.json  --insecure
+        npm install -g newman
+        npm install -g newman-reporter-html
+
+    - name: Run Postman tests with HTML report
+      run: |
+        newman run PostServiceTests/YPostApiTests.postman_collection.json --insecure -r html --reporter-html-export newman-report.html
+
+    - name: Upload Newman HTML report
+      uses: actions/upload-artifact@v4
+      with:
+        name: newman-html-report
+        path: newman-report.html
+
+  xunit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run tests
+      run: dotnet test --no-build --configuration Release
+
+  codeql-analysis:
+    runs-on: ubuntu-latest
+    needs: xunit-tests
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        language: [csharp]
+        build-mode: [manual]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+        build-mode: manual
+
+    - name: Build solution manually
+      run: dotnet build --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
