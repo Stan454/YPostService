@@ -78,7 +78,6 @@ else
     throw new Exception("Unknown environment");
 }
 
-
 var app = builder.Build();
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
