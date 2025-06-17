@@ -5,6 +5,7 @@ using System.Reflection;
 using YPostService.Logic;
 using YPostService.Models;
 using YPostService.Repo;
+using Prometheus;
 
 // Serilog setup before builder
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -118,7 +119,16 @@ if (env.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpMetrics();
+app.UseRouting();
 app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapMetrics(); // Map Prometheus metrics endpoint
+});
+
 app.Run();
